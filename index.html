@@ -3,485 +3,153 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>2048 游戏</title>
+    <title>像素女孩与蓝猫 - 动态场景</title>
     <style>
-        * {
+        /* 基础重置与深色背景设定 */
+        body, html {
             margin: 0;
             padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Arial', sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-        }
-
-        .game-container {
-            background: #faf8ef;
-            border-radius: 10px;
-            padding: 20px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-        }
-
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-        }
-
-        h1 {
-            font-size: 48px;
-            color: #776e65;
-        }
-
-        .score-container {
-            background: #bbada0;
-            padding: 10px 20px;
-            border-radius: 5px;
-            text-align: center;
-        }
-
-        .score-label {
-            color: #eee4da;
-            font-size: 12px;
-            text-transform: uppercase;
-        }
-
-        .score-value {
-            color: white;
-            font-size: 24px;
-            font-weight: bold;
-        }
-
-        .grid {
-            background: #bbada0;
-            border-radius: 5px;
-            padding: 10px;
-            display: grid;
-            grid-template-columns: repeat(4, 80px);
-            grid-template-rows: repeat(4, 80px);
-            gap: 10px;
-            position: relative;
-        }
-
-        .cell {
-            background: rgba(238, 228, 218, 0.35);
-            border-radius: 5px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-
-        .tile {
             width: 100%;
             height: 100%;
-            border-radius: 5px;
+            overflow: hidden;
+            background: linear-gradient(to bottom, #0f1c3f, #1e4572); /* 契合画面的深海蓝渐变 */
             display: flex;
             justify-content: center;
             align-items: center;
-            font-size: 32px;
-            font-weight: bold;
-            color: #776e65;
-            animation: appear 0.2s ease;
         }
 
-        .tile[data-value="2"] { background: #eee4da; }
-        .tile[data-value="4"] { background: #ede0c8; }
-        .tile[data-value="8"] { background: #f2b179; color: #f9f6f2; }
-        .tile[data-value="16"] { background: #f59563; color: #f9f6f2; }
-        .tile[data-value="32"] { background: #f67c5f; color: #f9f6f2; }
-        .tile[data-value="64"] { background: #f65e3b; color: #f9f6f2; }
-        .tile[data-value="128"] { background: #edcf72; color: #f9f6f2; font-size: 28px; animation: pop 0.2s ease; }
-        .tile[data-value="256"] { background: #edcc61; color: #f9f6f2; font-size: 28px; animation: pop 0.2s ease; }
-        .tile[data-value="512"] { background: #edc850; color: #f9f6f2; font-size: 28px; animation: pop 0.2s ease; }
-        .tile[data-value="1024"] { background: #edc53f; color: #f9f6f2; font-size: 24px; animation: pop 0.3s ease; }
-        .tile[data-value="2048"] { background: #edc22e; color: #f9f6f2; font-size: 24px; animation: pop 0.3s ease; }
-
-        @keyframes appear {
-            0% { opacity: 0; transform: scale(0); }
-            100% { opacity: 1; transform: scale(1); }
+        /* 场景容器 */
+        .scene-container {
+            position: relative;
+            z-index: 2;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+            border-radius: 12px;
+            /* 关键点1：添加CSS呼吸动画 */
+            animation: breathe 4s ease-in-out infinite;
         }
 
-        @keyframes pop {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.2); }
-            100% { transform: scale(1); }
+        /* 像素画图片样式 */
+        .pixel-art {
+            display: block;
+            max-width: 90vw;
+            max-height: 90vh;
+            border-radius: 12px;
+            image-rendering: pixelated; /* 保持像素画的清晰边缘 */
         }
 
-        .merged {
-            animation: merge 0.2s ease;
-        }
-
-        @keyframes merge {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.15); }
-            100% { transform: scale(1); }
-        }
-
-        .controls {
-            margin-top: 20px;
-            display: flex;
-            gap: 10px;
-            justify-content: center;
-        }
-
-        button {
-            background: #8f7a66;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 5px;
-            font-size: 16px;
-            cursor: pointer;
-            transition: background 0.2s, transform 0.1s;
-        }
-
-        button:hover {
-            background: #9f8b77;
-        }
-
-        button:active {
-            transform: scale(0.95);
-        }
-
-        .message {
-            text-align: center;
-            margin-top: 15px;
-            font-size: 18px;
-            color: #776e65;
-            font-weight: bold;
-            min-height: 27px;
-        }
-
-        .message.win {
-            color: #f65e3b;
-            animation: pulse 1s infinite;
-        }
-
-        .message.over {
-            color: #776e65;
-        }
-
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
-        }
-
-        .instructions {
-            margin-top: 15px;
-            color: #776e65;
-            font-size: 14px;
-            text-align: center;
-        }
-
-        @media (max-width: 500px) {
-            .grid {
-                grid-template-columns: repeat(4, 60px);
-                grid-template-rows: repeat(4, 60px);
+        /* 定义呼吸动画关键帧 */
+        @keyframes breathe {
+            0%, 100% {
+                transform: scale(1) translateY(0);
             }
-            .tile {
-                font-size: 24px;
+            50% {
+                /* 微微放大并上移，模拟呼吸时的胸腔起伏 */
+                transform: scale(1.015) translateY(-6px);
             }
-            h1 {
-                font-size: 36px;
-            }
+        }
+
+        /* Canvas 特效层，覆盖在整个屏幕上 */
+        #particleCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            pointer-events: none; /* 让鼠标点击可以穿透到图片上 */
         }
     </style>
 </head>
 <body>
-    <div class="game-container">
-        <div class="header">
-            <h1>2048</h1>
-            <div class="score-container">
-                <div class="score-label">分数</div>
-                <div class="score-value" id="score">0</div>
-            </div>
-        </div>
-        <div class="grid" id="grid"></div>
-        <div class="message" id="message"></div>
-        <div class="controls">
-            <button onclick="newGame()">新游戏</button>
-        </div>
-        <div class="instructions">
-            使用 <strong>方向键</strong> 或 <strong>滑动</strong> 来移动方块
-        </div>
+
+    <canvas id="particleCanvas"></canvas>
+
+    <div class="scene-container">
+        <img src="cute.jpg" alt="可爱的长发女生和英短蓝猫" class="pixel-art">
     </div>
 
     <script>
-        // 音效系统 - 使用 Web Audio API
-        const AudioContext = window.AudioContext || window.webkitAudioContext;
-        let audioCtx = null;
+        // 关键点2：Canvas 环境特效逻辑
+        const canvas = document.getElementById('particleCanvas');
+        const ctx = canvas.getContext('2d');
+        let particlesArray = [];
 
-        function initAudio() {
-            if (!audioCtx) {
-                audioCtx = new AudioContext();
+        // 动态调整画布尺寸
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        // 粒子类（可以是星星，也可以是萤火虫）
+        class Particle {
+            constructor() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                // 根据位置决定是星星还是萤火虫（上半部分是星星，下半部分偏绿光）
+                this.isStar = this.y < canvas.height * 0.6;
+                this.size = Math.random() * 2 + 0.5;
+                
+                if (this.isStar) {
+                    this.speedX = (Math.random() - 0.5) * 0.1;
+                    this.speedY = (Math.random() - 0.5) * 0.1;
+                    this.color = `rgba(255, 255, 255, ${Math.random()})`;
+                } else {
+                    this.speedX = (Math.random() - 0.5) * 0.5;
+                    this.speedY = (Math.random() - 0.5) * 0.5;
+                    this.color = `rgba(173, 255, 47, ${Math.random() * 0.6})`; // 偏黄绿的萤火虫光
+                }
+            }
+
+            update() {
+                this.x += this.speedX;
+                this.y += this.speedY;
+
+                // 边界处理：从一侧消失，从另一侧出现
+                if (this.x > canvas.width) this.x = 0;
+                if (this.x < 0) this.x = canvas.width;
+                if (this.y > canvas.height) this.y = 0;
+                if (this.y < 0) this.y = canvas.height;
+            }
+
+            draw() {
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // 给萤火虫添加发光效果
+                if (!this.isStar) {
+                    ctx.shadowBlur = 10;
+                    ctx.shadowColor = "greenyellow";
+                } else {
+                    ctx.shadowBlur = 0;
+                }
             }
         }
 
-        function playSound(type) {
-            initAudio();
-            if (!audioCtx) return;
-
-            const oscillator = audioCtx.createOscillator();
-            const gainNode = audioCtx.createGain();
-
-            oscillator.connect(gainNode);
-            gainNode.connect(audioCtx.destination);
-
-            switch (type) {
-                case 'move':
-                    oscillator.frequency.setValueAtTime(300, audioCtx.currentTime);
-                    oscillator.frequency.exponentialRampToValueAtTime(200, audioCtx.currentTime + 0.1);
-                    gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
-                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
-                    oscillator.start(audioCtx.currentTime);
-                    oscillator.stop(audioCtx.currentTime + 0.1);
-                    break;
-                case 'merge':
-                    oscillator.frequency.setValueAtTime(400, audioCtx.currentTime);
-                    oscillator.frequency.exponentialRampToValueAtTime(600, audioCtx.currentTime + 0.15);
-                    gainNode.gain.setValueAtTime(0.15, audioCtx.currentTime);
-                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
-                    oscillator.start(audioCtx.currentTime);
-                    oscillator.stop(audioCtx.currentTime + 0.15);
-                    break;
-                case 'newTile':
-                    oscillator.frequency.setValueAtTime(500, audioCtx.currentTime);
-                    oscillator.frequency.exponentialRampToValueAtTime(800, audioCtx.currentTime + 0.08);
-                    gainNode.gain.setValueAtTime(0.08, audioCtx.currentTime);
-                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.08);
-                    oscillator.start(audioCtx.currentTime);
-                    oscillator.stop(audioCtx.currentTime + 0.08);
-                    break;
-                case 'win':
-                    const notes = [523, 659, 784, 1047]; // C5, E5, G5, C6
-                    notes.forEach((freq, i) => {
-                        const osc = audioCtx.createOscillator();
-                        const gain = audioCtx.createGain();
-                        osc.connect(gain);
-                        gain.connect(audioCtx.destination);
-                        osc.frequency.setValueAtTime(freq, audioCtx.currentTime + i * 0.15);
-                        gain.gain.setValueAtTime(0.1, audioCtx.currentTime + i * 0.15);
-                        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + i * 0.15 + 0.2);
-                        osc.start(audioCtx.currentTime + i * 0.15);
-                        osc.stop(audioCtx.currentTime + i * 0.15 + 0.2);
-                    });
-                    break;
-                case 'gameover':
-                    oscillator.frequency.setValueAtTime(400, audioCtx.currentTime);
-                    oscillator.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.5);
-                    gainNode.gain.setValueAtTime(0.15, audioCtx.currentTime);
-                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
-                    oscillator.start(audioCtx.currentTime);
-                    oscillator.stop(audioCtx.currentTime + 0.5);
-                    break;
-            }
-        }
-
-        const gridSize = 4;
-        let grid = [];
-        let score = 0;
-        let gameOver = false;
-        let won = false;
-        let mergedPositions = [];
-
+        // 初始化粒子系统
         function init() {
-            grid = Array(gridSize).fill(null).map(() => Array(gridSize).fill(0));
-            score = 0;
-            gameOver = false;
-            won = false;
-            mergedPositions = [];
-            addRandomTile();
-            addRandomTile();
-            updateDisplay();
-            document.getElementById('message').textContent = '';
-            document.getElementById('message').className = 'message';
-        }
-
-        function addRandomTile() {
-            const emptyCells = [];
-            for (let i = 0; i < gridSize; i++) {
-                for (let j = 0; j < gridSize; j++) {
-                    if (grid[i][j] === 0) {
-                        emptyCells.push({ row: i, col: j });
-                    }
-                }
-            }
-            if (emptyCells.length > 0) {
-                const randomCell = emptyCells[Math.floor(Math.random() * emptyCells.length)];
-                grid[randomCell.row][randomCell.col] = Math.random() < 0.9 ? 2 : 4;
-                playSound('newTile');
+            particlesArray = [];
+            let numberOfParticles = (canvas.width * canvas.height) / 9000;
+            for (let i = 0; i < numberOfParticles; i++) {
+                particlesArray.push(new Particle());
             }
         }
 
-        function updateDisplay() {
-            const gridElement = document.getElementById('grid');
-            gridElement.innerHTML = '';
-            for (let i = 0; i < gridSize; i++) {
-                for (let j = 0; j < gridSize; j++) {
-                    const cell = document.createElement('div');
-                    cell.className = 'cell';
-                    gridElement.appendChild(cell);
-
-                    const value = grid[i][j];
-                    if (value > 0) {
-                        const tile = document.createElement('div');
-                        tile.className = 'tile';
-                        tile.setAttribute('data-value', value);
-                        tile.textContent = value;
-
-                        if (mergedPositions.some(p => p.row === i && p.col === j)) {
-                            tile.classList.add('merged');
-                        }
-
-                        cell.appendChild(tile);
-                    }
-                }
+        // 动画循环
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            for (let i = 0; i < particlesArray.length; i++) {
+                particlesArray[i].update();
+                particlesArray[i].draw();
             }
-            document.getElementById('score').textContent = score;
+            requestAnimationFrame(animate);
         }
 
-        function slide(row) {
-            let arr = row.filter(val => val !== 0);
-            mergedPositions = [];
-            for (let i = 0; i < arr.length - 1; i++) {
-                if (arr[i] === arr[i + 1]) {
-                    arr[i] *= 2;
-                    score += arr[i];
-                    mergedPositions.push({ row: -1, col: i });
-                    arr[i + 1] = 0;
-                    playSound('merge');
-                    if (arr[i] === 2048 && !won) {
-                        won = true;
-                        setTimeout(() => {
-                            playSound('win');
-                            showMessage('恭喜！你达到了 2048！', 'win');
-                        }, 200);
-                    }
-                }
-            }
-            arr = arr.filter(val => val !== 0);
-            while (arr.length < gridSize) {
-                arr.push(0);
-            }
-            return arr;
-        }
-
-        function move(direction) {
-            if (gameOver) return;
-
-            const oldGrid = JSON.stringify(grid);
-            let moved = false;
-
-            if (direction === 'left' || direction === 'right') {
-                for (let i = 0; i < gridSize; i++) {
-                    let row = [...grid[i]];
-                    if (direction === 'right') row.reverse();
-                    const newRow = slide(row);
-                    if (direction === 'right') newRow.reverse();
-                    if (JSON.stringify(grid[i]) !== JSON.stringify(newRow)) {
-                        moved = true;
-                    }
-                    grid[i] = newRow;
-                }
-            } else if (direction === 'up' || direction === 'down') {
-                for (let j = 0; j < gridSize; j++) {
-                    let col = [];
-                    for (let i = 0; i < gridSize; i++) {
-                        col.push(grid[i][j]);
-                    }
-                    if (direction === 'down') col.reverse();
-                    const newCol = slide(col);
-                    if (direction === 'down') newCol.reverse();
-                    for (let i = 0; i < gridSize; i++) {
-                        if (grid[i][j] !== newCol[i]) {
-                            moved = true;
-                        }
-                        grid[i][j] = newCol[i];
-                    }
-                }
-            }
-
-            if (moved) {
-                playSound('move');
-                setTimeout(() => {
-                    addRandomTile();
-                    updateDisplay();
-                    checkGameOver();
-                }, 100);
-            }
-        }
-
-        function checkGameOver() {
-            for (let i = 0; i < gridSize; i++) {
-                for (let j = 0; j < gridSize; j++) {
-                    if (grid[i][j] === 0) return;
-                    if (j < gridSize - 1 && grid[i][j] === grid[i][j + 1]) return;
-                    if (i < gridSize - 1 && grid[i][j] === grid[i + 1][j]) return;
-                }
-            }
-            gameOver = true;
-            setTimeout(() => {
-                playSound('gameover');
-                showMessage('游戏结束！', 'over');
-            }, 300);
-        }
-
-        function showMessage(text, type) {
-            const msgEl = document.getElementById('message');
-            msgEl.textContent = text;
-            msgEl.className = 'message ' + type;
-        }
-
-        function newGame() {
-            init();
-        }
-
-        // 键盘控制
-        document.addEventListener('keydown', (e) => {
-            initAudio();
-            switch (e.key) {
-                case 'ArrowLeft': move('left'); break;
-                case 'ArrowRight': move('right'); break;
-                case 'ArrowUp': move('up'); break;
-                case 'ArrowDown': move('down'); break;
-            }
-        });
-
-        // 触摸控制
-        let startX, startY;
-        document.addEventListener('touchstart', (e) => {
-            initAudio();
-            startX = e.touches[0].clientX;
-            startY = e.touches[0].clientY;
-        }, { passive: true });
-
-        document.addEventListener('touchend', (e) => {
-            const endX = e.changedTouches[0].clientX;
-            const endY = e.changedTouches[0].clientY;
-            const diffX = endX - startX;
-            const diffY = endY - startY;
-
-            const minSwipe = 50;
-            if (Math.abs(diffX) > Math.abs(diffY)) {
-                if (Math.abs(diffX) > minSwipe) {
-                    move(diffX > 0 ? 'right' : 'left');
-                }
-            } else {
-                if (Math.abs(diffY) > minSwipe) {
-                    move(diffY > 0 ? 'down' : 'up');
-                }
-            }
-        });
-
-        // 初始化游戏
         init();
+        animate();
     </script>
 </body>
 </html>
