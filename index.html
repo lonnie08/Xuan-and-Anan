@@ -6,9 +6,7 @@
     <title>Xuan&Anan🐱</title>
     <link rel="icon" href="像素爱心.png" type="image/png">
     <style>
-        /* ================= CSS 样式整合 ================= */
-        
-        /* 1. 基础布局与背景 */
+        /* 1. 基础布局 */
         body, html {
             margin: 0; padding: 0; width: 100%; height: 100%;
             overflow: hidden;
@@ -17,67 +15,64 @@
             background-color: #0a0a0a;
         }
 
-        /* 2. 加载动画遮罩 (Loader) */
+        /* 2. 加载动画 */
         #loader {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: #0f1c3f; display: flex; flex-direction: column;
             justify-content: center; align-items: center; z-index: 999;
             transition: opacity 0.8s ease;
         }
-
-        /* 像素方块跳动动画 */
         .pixel-spinner {
             width: 20px; height: 20px; background: #adff2f;
             box-shadow: 25px 0 #adff2f, -25px 0 #adff2f;
             animation: move 1s infinite;
         }
-
         @keyframes move {
             0%, 100% { transform: translateY(0); }
             50% { transform: translateY(-20px); }
         }
-
         .loading-text {
             margin-top: 30px; color: white;
             font-family: 'Courier New', monospace; font-size: 14px;
             letter-spacing: 2px;
         }
 
-        /* 3. 视频容器与漂浮动画 */
+        /* 3. 视频容器与优化 */
         .scene-container {
             position: relative; z-index: 2; border-radius: 12px;
             box-shadow: 0 0 60px rgba(0, 150, 255, 0.3);
+            /* 使用 translate3d 开启硬件加速 */
             animation: floating 5s ease-in-out infinite;
-            opacity: 0; /* 配合 JS 加载完后淡入 */
+            opacity: 0;
             transition: opacity 1.5s ease;
+            will-change: transform;
         }
-        
-        /* 加载完成后的类名 */
         .scene-container.loaded { opacity: 1; }
 
         .pixel-video {
             display: block; max-width: 85vw; max-height: 85vh;
             border-radius: 12px;
-            /* 保持像素风清晰 */
             image-rendering: pixelated;
             image-rendering: crisp-edges;
             object-fit: contain;
             border: 2px solid rgba(255, 255, 255, 0.1);
             background-color: #000;
+            /* 手机端强制硬件加速 */
+            transform: translateZ(0);
         }
 
         @keyframes floating {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-15px); }
+            0%, 100% { transform: translate3d(0, 0, 0); }
+            50% { transform: translate3d(0, -15px, 0); }
         }
 
         /* 4. Canvas 特效层 */
         #particleCanvas {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            z-index: 3; pointer-events: none; /* 确保鼠标可以点到按钮 */
+            z-index: 3; pointer-events: none;
         }
 
-        /* 5. 音乐按钮样式 */
+        /* 5. 音乐按钮 */
         .music-btn {
             position: fixed; bottom: 30px; right: 30px; z-index: 10;
             padding: 12px 24px; background: rgba(255, 255, 255, 0.1);
@@ -88,11 +83,11 @@
             font-family: 'Courier New', monospace; font-size: 14px;
             transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             outline: none;
+            /* 适配手机点击：防止点击变色 */
+            -webkit-tap-highlight-color: transparent;
         }
-
         .music-btn:hover { background: rgba(255, 255, 255, 0.25); transform: scale(1.05); }
         .music-btn.active { border-color: #adff2f; color: #adff2f; box-shadow: 0 0 15px rgba(173, 255, 47, 0.3); }
-
     </style>
 </head>
 <body>
@@ -109,7 +104,7 @@
     <canvas id="particleCanvas"></canvas>
 
     <div class="scene-container" id="container">
-        <video id="mainVideo" autoplay loop muted playsinline poster="cute.jpg" class="pixel-video">
+        <video id="mainVideo" autoplay loop muted playsinline webkit-playsinline preload="auto" poster="cute.jpg" class="pixel-video">
             <source src="cute.mp4" type="video/mp4">
         </video>
     </div>
@@ -117,8 +112,6 @@
     <button id="musicControl" class="music-btn">Music: OFF</button>
 
     <script>
-        /* ================= JavaScript 逻辑整合 ================= */
-
         const video = document.getElementById('mainVideo');
         const loader = document.getElementById('loader');
         const container = document.getElementById('container');
@@ -127,8 +120,9 @@
         const btn = document.getElementById('musicControl');
         const bgm = document.getElementById('bgm');
 
-        // 1. 视频加载逻辑
-        // 当视频加载到足够播放时隐藏 Loading
+        // 检测手机端
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+
         const handleLoaded = () => {
             loader.style.opacity = '0';
             setTimeout(() => {
@@ -143,7 +137,7 @@
             video.addEventListener('canplaythrough', handleLoaded);
         }
 
-        // 2. 粒子特效逻辑
+        // 粒子逻辑优化
         let particles = [];
         const resize = () => {
             canvas.width = window.innerWidth;
@@ -157,10 +151,10 @@
             init() {
                 this.x = Math.random() * canvas.width;
                 this.y = Math.random() * canvas.height;
-                this.type = Math.random() > 0.6 ? 1 : 0; // 0:星星, 1:萤火虫
+                this.type = Math.random() > 0.6 ? 1 : 0;
                 this.size = this.type === 0 ? Math.random() * 1.5 : Math.random() * 3 + 1;
-                this.speedX = (Math.random() - 0.5) * 0.4;
-                this.speedY = (Math.random() - 0.5) * 0.4;
+                this.speedX = (Math.random() - 0.5) * 0.3;
+                this.speedY = (Math.random() - 0.5) * 0.3;
                 this.alpha = Math.random();
                 this.fade = Math.random() * 0.02 + 0.005;
             }
@@ -174,13 +168,19 @@
                 ctx.save();
                 ctx.globalAlpha = this.alpha;
                 ctx.fillStyle = this.type === 0 ? "#ffffff" : "#adff2f";
-                if (this.type === 1) { ctx.shadowBlur = 10; ctx.shadowColor = "#adff2f"; }
+                // 手机端禁用阴影以获得丝滑性能
+                if (this.type === 1 && !isMobile) { 
+                    ctx.shadowBlur = 10; 
+                    ctx.shadowColor = "#adff2f"; 
+                }
                 ctx.beginPath(); ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2); ctx.fill();
                 ctx.restore();
             }
         }
 
-        for (let i = 0; i < 70; i++) particles.push(new Particle());
+        // 手机端减少粒子数量
+        const pCount = isMobile ? 35 : 70;
+        for (let i = 0; i < pCount; i++) particles.push(new Particle());
 
         function animate() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -189,16 +189,13 @@
         }
         animate();
 
-        // 3. 音乐交互逻辑
         bgm.volume = 0.5;
         btn.onclick = () => {
             if (bgm.paused) {
                 bgm.play().then(() => {
                     btn.innerText = "Music: ON";
                     btn.classList.add('active');
-                }).catch(e => {
-                    console.log("需要用户交互才能播放音乐");
-                });
+                }).catch(e => { console.log("Interaction required"); });
             } else {
                 bgm.pause();
                 btn.innerText = "Music: OFF";
@@ -206,11 +203,9 @@
             }
         };
 
-        // 容错：如果视频5秒还没加载完，强制进入页面
         setTimeout(() => {
             if (loader.style.display !== 'none') handleLoaded();
         }, 5000);
-
     </script>
 </body>
 </html>
