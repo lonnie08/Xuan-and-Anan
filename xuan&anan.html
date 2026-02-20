@@ -4,27 +4,152 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Xuan&Anan🐱</title>
-    <link rel="stylesheet" href="style.css">
+    <style>
+        /* 基础重置与深色背景设定 */
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: linear-gradient(to bottom, #0f1c3f, #1e4572); /* 契合画面的深海蓝渐变 */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* 场景容器 */
+        .scene-container {
+            position: relative;
+            z-index: 2;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+            border-radius: 12px;
+            /* 关键点1：添加CSS呼吸动画 */
+            animation: breathe 4s ease-in-out infinite;
+        }
+
+        /* 像素画图片样式 */
+        .pixel-art {
+            display: block;
+            max-width: 90vw;
+            max-height: 90vh;
+            border-radius: 12px;
+            image-rendering: pixelated; /* 保持像素画的清晰边缘 */
+        }
+
+        /* 定义呼吸动画关键帧 */
+        @keyframes breathe {
+            0%, 100% {
+                transform: scale(1) translateY(0);
+            }
+            50% {
+                /* 微微放大并上移，模拟呼吸时的胸腔起伏 */
+                transform: scale(1.015) translateY(-6px);
+            }
+        }
+
+        /* Canvas 特效层，覆盖在整个屏幕上 */
+        #particleCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            pointer-events: none; /* 让鼠标点击可以穿透到图片上 */
+        }
+    </style>
 </head>
 <body>
-
-    <div id="musicControl" class="music-btn">
-        <div class="disc"></div>
-    </div>
-
-    <audio id="bgm" loop>
-        <source src="Meridian.mp3" type="audio/mpeg">
-    </audio>
 
     <canvas id="particleCanvas"></canvas>
 
     <div class="scene-container">
-        <video autoplay loop muted playsinline class="pixel-video">
-            <source src="cute.mp4" type="video/mp4">
-            您的浏览器不支持视频。
-        </video>
+        <img src="cute.jpg" alt="可爱的长发女生和英短蓝猫" class="pixel-art">
     </div>
 
-    <script src="script.js"></script>
+    <script>
+        // 关键点2：Canvas 环境特效逻辑
+        const canvas = document.getElementById('particleCanvas');
+        const ctx = canvas.getContext('2d');
+        let particlesArray = [];
+
+        // 动态调整画布尺寸
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        // 粒子类（可以是星星，也可以是萤火虫）
+        class Particle {
+            constructor() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                // 根据位置决定是星星还是萤火虫（上半部分是星星，下半部分偏绿光）
+                this.isStar = this.y < canvas.height * 0.6;
+                this.size = Math.random() * 2 + 0.5;
+                
+                if (this.isStar) {
+                    this.speedX = (Math.random() - 0.5) * 0.1;
+                    this.speedY = (Math.random() - 0.5) * 0.1;
+                    this.color = `rgba(255, 255, 255, ${Math.random()})`;
+                } else {
+                    this.speedX = (Math.random() - 0.5) * 0.5;
+                    this.speedY = (Math.random() - 0.5) * 0.5;
+                    this.color = `rgba(173, 255, 47, ${Math.random() * 0.6})`; // 偏黄绿的萤火虫光
+                }
+            }
+
+            update() {
+                this.x += this.speedX;
+                this.y += this.speedY;
+
+                // 边界处理：从一侧消失，从另一侧出现
+                if (this.x > canvas.width) this.x = 0;
+                if (this.x < 0) this.x = canvas.width;
+                if (this.y > canvas.height) this.y = 0;
+                if (this.y < 0) this.y = canvas.height;
+            }
+
+            draw() {
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // 给萤火虫添加发光效果
+                if (!this.isStar) {
+                    ctx.shadowBlur = 10;
+                    ctx.shadowColor = "greenyellow";
+                } else {
+                    ctx.shadowBlur = 0;
+                }
+            }
+        }
+
+        // 初始化粒子系统
+        function init() {
+            particlesArray = [];
+            let numberOfParticles = (canvas.width * canvas.height) / 9000;
+            for (let i = 0; i < numberOfParticles; i++) {
+                particlesArray.push(new Particle());
+            }
+        }
+
+        // 动画循环
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            for (let i = 0; i < particlesArray.length; i++) {
+                particlesArray[i].update();
+                particlesArray[i].draw();
+            }
+            requestAnimationFrame(animate);
+        }
+
+        init();
+        animate();
+    </script>
 </body>
 </html>
